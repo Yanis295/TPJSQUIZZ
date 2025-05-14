@@ -5,6 +5,7 @@ class QuizApp {
         
         this.currentQuestionIndex = 0;
         this.score = 0;
+        this.shuffledQuestions = [...questions]; // Copie des questions de base
         
         // DOM
         this.welcomeScreen = document.getElementById('welcome-screen');
@@ -15,6 +16,7 @@ class QuizApp {
         this.nextButton = document.getElementById('next-button');
         this.submitButton = document.getElementById('submit-button');
         this.scoreDisplay = document.getElementById('score-display');
+        this.answersReview = document.getElementById('answers-review');
         
         this.initEventListeners();
     }
@@ -35,14 +37,25 @@ class QuizApp {
         this.welcomeScreen.style.display = 'none';
         this.quizScreen.style.display = 'block';
         
+        this.shuffleQuestions();
+        
         this.displayQuestion();
-        initProgressBar(questions.length);
+        initProgressBar(this.shuffledQuestions.length);
+    }
+    
+    // Fonction pour mélanger les questions
+    shuffleQuestions() {
+        for (let i = this.shuffledQuestions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.shuffledQuestions[i], this.shuffledQuestions[j]] = 
+            [this.shuffledQuestions[j], this.shuffledQuestions[i]];
+        }
     }
     
     displayQuestion() {
-        const question = questions[this.currentQuestionIndex];
+        const question = this.shuffledQuestions[this.currentQuestionIndex];
         
-        this.questionTitle.innerText = `Question ${this.currentQuestionIndex + 1}/${questions.length}: ${question.title}`;
+        this.questionTitle.innerText = `Question ${this.currentQuestionIndex + 1}/${this.shuffledQuestions.length}: ${question.title}`;
         
         this.answersContainer.innerHTML = '';
         
@@ -101,40 +114,137 @@ class QuizApp {
             this.answersContainer.appendChild(textInput);
         }
         
-        this.nextButton.style.display = this.currentQuestionIndex < questions.length - 1 ? 'inline-block' : 'none';
-        this.submitButton.style.display = this.currentQuestionIndex === questions.length - 1 ? 'inline-block' : 'none';
+        this.nextButton.style.display = this.currentQuestionIndex < this.shuffledQuestions.length - 1 ? 'inline-block' : 'none';
+        this.submitButton.style.display = this.currentQuestionIndex === this.shuffledQuestions.length - 1 ? 'inline-block' : 'none';
         
-        updateProgressBar(this.currentQuestionIndex, questions.length);
+        updateProgressBar(this.currentQuestionIndex, this.shuffledQuestions.length);
     }
     
     nextQuestion() {
-        if (this.currentQuestionIndex < questions.length - 1) {
+        if (this.currentQuestionIndex < this.shuffledQuestions.length - 1) {
             this.currentQuestionIndex++;
             this.displayQuestion();
         }
     }
     
     submitQuiz() {
-        // Score
         this.calculateScore();
         
-        // écran des résultats
         this.quizScreen.style.display = 'none';
         this.resultsScreen.style.display = 'block';
         
-        // Score final
-        this.scoreDisplay.innerText = `Tu as eu ${this.score} sur ${questions.length}.`;
-        if(this.score >= 4) {
-            this.scoreDisplay.innerText += " C'est pas mal !";
+        const scoreThreshold = 4;
+        const isGoodScore = this.score >= scoreThreshold;
+        
+        const scoreContainer = document.getElementById('score-container');
+        const revealScoreBtn = document.getElementById('reveal-score-btn');
+        const scoreDisplay = this.scoreDisplay;
+        
+        if (isGoodScore) {
+            revealScoreBtn.style.display = 'none';
+            scoreDisplay.style.display = 'block';
+            scoreDisplay.innerText = `Bravo ! Tu as eu ${this.score} sur ${this.shuffledQuestions.length}.`;
+            
+            this.displayAnswersReview();
+        } else {
+            scoreDisplay.style.display = 'none';
+            revealScoreBtn.style.display = 'block';
+            revealScoreBtn.innerText = "Je veux quand même voir ma note (à tes risques et périls...)";
+            
+            this.answersReview.innerHTML = '';
+            
+            revealScoreBtn.addEventListener('click', () => {
+                revealScoreBtn.style.display = 'none';
+                scoreDisplay.style.display = 'block';
+                scoreDisplay.innerText = `Aïe... Tu as eu ${this.score} sur ${this.shuffledQuestions.length}. T'es éclaté au sol jusqu'au ciel !`;
+                
+                this.displayAnswersReview();
+            });
         }
-        else {
-            this.scoreDisplay.innerText += " T'es éclaté au sol jusqu'au ciel !";
-        }
+    }
+    
+    displayAnswersReview() {
+        this.answersReview.innerHTML = '';
+        
+        const reviewContainer = document.createElement('div');
+        reviewContainer.className = 'answers-review-container';
+        
+        const reviewTitle = document.createElement('h3');
+        reviewTitle.innerText = 'Résumé de tes réponses:';
+        reviewContainer.appendChild(reviewTitle);
+        
+        const table = document.createElement('table');
+        table.className = 'review-table';
+        
+        const tableHeader = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        
+        ['Question', 'Ta réponse', 'Réponse correcte', 'Résultat'].forEach(text => {
+            const th = document.createElement('th');
+            th.innerText = text;
+            headerRow.appendChild(th);
+        });
+        
+        tableHeader.appendChild(headerRow);
+        table.appendChild(tableHeader);
+        
+        const tableBody = document.createElement('tbody');
+        
+        this.shuffledQuestions.forEach((question, index) => {
+            const row = document.createElement('tr');
+            
+            const questionCell = document.createElement('td');
+            questionCell.innerText = `${index + 1}. ${question.title}`;
+            row.appendChild(questionCell);
+            
+            const userAnswerCell = document.createElement('td');
+            if (question.type === 'radio' && question.userAnswer !== null) {
+                userAnswerCell.innerText = question.answers[question.userAnswer];
+            } else if (question.type === 'text') {
+                userAnswerCell.innerText = question.userAnswer || '(Non répondu)';
+            } else {
+                userAnswerCell.innerText = '(Non répondu)';
+            }
+            row.appendChild(userAnswerCell);
+            
+            const correctAnswerCell = document.createElement('td');
+            if (question.type === 'radio') {
+                correctAnswerCell.innerText = question.answers[question.correctAnswer];
+            } else if (question.type === 'text') {
+                correctAnswerCell.innerText = question.correctAnswer;
+            }
+            row.appendChild(correctAnswerCell);
+            
+            const resultCell = document.createElement('td');
+            resultCell.className = question.isCorrect() ? 'correct' : 'incorrect';
+            resultCell.innerText = question.isCorrect() ? 'Correct' : 'Incorrect';
+            row.appendChild(resultCell);
+            
+            tableBody.appendChild(row);
+        });
+        
+        table.appendChild(tableBody);
+        reviewContainer.appendChild(table);
+        
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'stats';
+        
+        const correctCount = this.shuffledQuestions.filter(q => q.isCorrect()).length;
+        const incorrectCount = this.shuffledQuestions.length - correctCount;
+        const correctPercent = Math.round((correctCount / this.shuffledQuestions.length) * 100);
+        const incorrectPercent = Math.round((incorrectCount / this.shuffledQuestions.length) * 100);
+        
+        statsDiv.innerHTML = `
+            <p><strong>Taux de réussite:</strong> ${correctPercent}% (${correctCount} sur ${this.shuffledQuestions.length})</p>
+        `;
+        
+        reviewContainer.appendChild(statsDiv);
+        this.answersReview.appendChild(reviewContainer);
     }
     
     calculateScore() {
         this.score = 0;
-        questions.forEach(question => {
+        this.shuffledQuestions.forEach(question => {
             if (question.isCorrect()) {
                 this.score++;
             }
@@ -148,6 +258,8 @@ class QuizApp {
         questions.forEach(question => {
             question.userAnswer = null;
         });
+        
+        this.shuffledQuestions = [...questions];
         
         this.resultsScreen.style.display = 'none';
         this.welcomeScreen.style.display = 'block';

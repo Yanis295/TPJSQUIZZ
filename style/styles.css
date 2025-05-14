@@ -93,3 +93,85 @@ body {
     color: #666;
 }
 
+.answers-review-container {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.review-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.review-table th, .review-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.review-table th {
+    background-color: #f0f0f0;
+}
+
+.review-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.review-table .correct {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.review-table .incorrect {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.stats {
+    background-color: #e9f5ea;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.stats p {
+    margin: 5px 0;
+}
+
+.danger-btn {
+    background-color: #dc3545;
+}
+
+.danger-btn:hover {
+    background-color: #c82333;
+}
+
+#score-container {
+    margin: 20px 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#score-display {
+    animation: fadeIn 1s;
+    font-weight: bold;
+    font-size: 1.2em;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 15px 0;
+    display: inline-block;
+}
+
+#reveal-score-btn {
+    margin: 15px 0;
+    transition: all 0.3s ease;
+}
+
+#reveal-score-btn:hover {
+    transform: scale(1.05);
+}
